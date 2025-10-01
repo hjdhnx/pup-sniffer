@@ -1,0 +1,64 @@
+{
+  "name": "pup-sniffer",
+  "version": "1.0.0",
+  "description": "Video resource sniffer using Puppeteer and Fastify",
+  "main": "server.cjs",
+  "bin": "server.cjs",
+  "scripts": {
+    "start": "node server.cjs",
+    "dev": "node --watch server.cjs",
+    "test": "node test.js",
+    "build": "node build.js",
+    "build:all": "npm run build:win && npm run build:linux && npm run build:macos && npm run build:macos-arm",
+    "build:win": "pkg . --targets node18-win-x64 --output dist/pup-sniffer-win.exe",
+    "build:linux": "pkg . --targets node18-linux-x64 --output dist/pup-sniffer-linux",
+    "build:macos": "pkg . --targets node18-macos-x64 --output dist/pup-sniffer-macos",
+    "build:macos-arm": "pkg . --targets node18-macos-arm64 --output dist/pup-sniffer-macos-arm64",
+    "clean": "rimraf dist",
+    "prebuild": "npm run clean"
+  },
+  "keywords": [
+    "puppeteer",
+    "fastify",
+    "video",
+    "sniffer",
+    "m3u8",
+    "mp4"
+  ],
+  "author": "hjdhnx",
+  "license": "MIT",
+  "dependencies": {
+    "@fastify/cors": "^8.4.0",
+    "@fastify/static": "^6.12.0",
+    "fastify": "^4.24.3",
+    "pino-pretty": "^13.1.1",
+    "puppeteer": "^21.6.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "pkg": "^5.8.1",
+    "rimraf": "^6.0.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "pkg": {
+    "scripts": [
+      "server.cjs",
+      "sniffer.cjs"
+    ],
+    "assets": [
+      "demo.html",
+      "node_modules/puppeteer/.local-chromium/**/*",
+      "node_modules/thread-stream/lib/worker.js",
+      "node_modules/pino-pretty/**/*"
+    ],
+    "targets": [
+      "node18-win-x64",
+      "node18-linux-x64",
+      "node18-macos-x64",
+      "node18-macos-arm64"
+    ],
+    "outputPath": "dist"
+  }
+}

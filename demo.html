@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pup Sniffer - 视频资源嗅探器演示</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .form-group .help-text {
+            font-size: 12px;
+            color: #666;
+            margin-top: 4px;
+            font-style: italic;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn.secondary {
+            background: #6c757d;
+        }
+
+        .btn.success {
+            background: #28a745;
+        }
+
+        .btn.danger {
+            background: #dc3545;
+        }
+
+        .btn.info {
+            background: #17a2b8;
+        }
+
+        .result {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .status {
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .advanced-section {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .advanced-section h3 {
+            color: #495057;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        .toggle-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-bottom: 15px;
+        }
+
+        .toggle-btn:hover {
+            background: #5a6268;
+        }
+
+        .collapsible {
+            display: none;
+        }
+
+        .collapsible.show {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .example-btn {
+            background: #17a2b8;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+
+        .example-btn:hover {
+            background: #138496;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎥 Pup Sniffer</h1>
+            <p>基于 Node.js + Puppeteer + Fastify 的视频资源嗅探器 - 完整参数演示</p>
+        </div>
+
+        <div class="content">
+            <!-- 服务状态检查 -->
+            <div class="section">
+                <h2>🔍 服务状态检查</h2>
+                <div>
+                    <button class="btn" onclick="checkHealth()">健康检查</button>
+                    <button class="btn secondary" onclick="checkActive()">活跃状态</button>
+                </div>
+                <div id="statusResult" class="result" style="display: none;"></div>
+            </div>
+
+            <div class="grid">
+                <!-- 视频嗅探 -->
+                <div class="section">
+                    <h2>📡 视频嗅探</h2>
+                    
+                    <!-- 基础参数 -->
+                    <div class="form-group">
+                        <label for="snifferUrl">目标 URL *</label>
+                        <input type="url" id="snifferUrl" placeholder="https://example.com/video" 
+                               value="https://www.w3schools.com/html/html5_video.asp">
+                        <div class="help-text">要嗅探的目标网页地址</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="snifferMode">嗅探模式</label>
+                        <select id="snifferMode">
+                            <option value="0">单个链接模式</option>
+                            <option value="1">多个链接模式</option>
+                        </select>
+                        <div class="help-text">0=单个链接，1=多个链接</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="snifferTimeout">超时时间 (毫秒)</label>
+                        <input type="number" id="snifferTimeout" value="10000" min="1000" max="60000">
+                        <div class="help-text">页面加载超时时间，默认10000毫秒</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="snifferIsPc">设备模拟</label>
+                        <select id="snifferIsPc">
+                            <option value="0">移动设备</option>
+                            <option value="1">PC 设备</option>
+                        </select>
+                        <div class="help-text">模拟设备类型</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="snifferCss">等待 CSS 选择器</label>
+                        <input type="text" id="snifferCss" placeholder="例如: .video-container">
+                        <div class="help-text">等待特定元素出现后再开始嗅探</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="snifferCustomRegex">自定义正则表达式</label>
+                        <input type="text" id="snifferCustomRegex" placeholder="例如: \.m3u8|\.mp4">
+                        <div class="help-text">自定义匹配视频链接的正则表达式</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="snifferExclude">排除正则表达式</label>
+                        <input type="text" id="snifferExclude" placeholder="例如: \.jpg|\.png|\.gif">
+                        <div class="help-text">排除不需要的链接</div>
+                    </div>
+
+                    <!-- 高级参数 -->
+                    <div class="advanced-section">
+                        <button class="toggle-btn" onclick="toggleAdvanced('snifferAdvanced')">
+                            🔧 高级参数 (点击展开/收起)
+                        </button>
+                        <div id="snifferAdvanced" class="collapsible">
+                            <div class="form-group">
+                                <label for="snifferHeaders">自定义请求头 (JSON格式)</label>
+                                <button class="example-btn" onclick="fillHeadersExample()">填入示例</button>
+                                <textarea id="snifferHeaders" placeholder='{"User-Agent": "Custom Agent", "Referer": "https://example.com"}'></textarea>
+                                <div class="help-text">JSON格式的自定义HTTP请求头</div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="snifferScript">页面执行脚本</label>
+                                <button class="example-btn" onclick="fillScriptExample()">填入示例</button>
+                                <textarea id="snifferScript" placeholder="document.querySelector('.play-btn').click();"></textarea>
+                                <div class="help-text">在页面加载完成后执行的JavaScript代码</div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="snifferInitScript">初始化脚本</label>
+                                <button class="example-btn" onclick="fillInitScriptExample()">填入示例</button>
+                                <textarea id="snifferInitScript" placeholder="window.customFlag = true;"></textarea>
+                                <div class="help-text">在页面加载前执行的JavaScript代码</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 20px;">
+                        <button class="btn" onclick="startSniffer()">开始嗅探</button>
+                        <button class="btn secondary" onclick="clearSnifferResult()">清空结果</button>
+                        <button class="btn info" onclick="fillSnifferExample()">填入测试示例</button>
+                    </div>
+                    <div id="snifferResult" class="result" style="display: none;"></div>
+                </div>
+
+                <!-- 页面源码获取 -->
+                <div class="section">
+                    <h2>📄 页面源码获取</h2>
+                    
+                    <!-- 基础参数 -->
+                    <div class="form-group">
+                        <label for="codeUrl">目标 URL *</label>
+                        <input type="url" id="codeUrl" placeholder="https://example.com" 
+                               value="https://www.baidu.com">
+                        <div class="help-text">要获取源码的目标网页地址</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="codeTimeout">超时时间 (毫秒)</label>
+                        <input type="number" id="codeTimeout" value="10000" min="1000" max="60000">
+                        <div class="help-text">页面加载超时时间</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="codeIsPc">设备模拟</label>
+                        <select id="codeIsPc">
+                            <option value="0">移动设备</option>
+                            <option value="1">PC 设备</option>
+                        </select>
+                        <div class="help-text">模拟设备类型</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="codeCss">等待 CSS 选择器</label>
+                        <input type="text" id="codeCss" placeholder="例如: .content">
+                        <div class="help-text">等待特定元素出现后再获取源码</div>
+                    </div>
+
+                    <!-- 高级参数 -->
+                    <div class="advanced-section">
+                        <button class="toggle-btn" onclick="toggleAdvanced('codeAdvanced')">
+                            🔧 高级参数 (点击展开/收起)
+                        </button>
+                        <div id="codeAdvanced" class="collapsible">
+                            <div class="form-group">
+                                <label for="codeHeaders">自定义请求头 (JSON格式)</label>
+                                <button class="example-btn" onclick="fillCodeHeadersExample()">填入示例</button>
+                                <textarea id="codeHeaders" placeholder='{"User-Agent": "Custom Agent"}'></textarea>
+                                <div class="help-text">JSON格式的自定义HTTP请求头</div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="codeScript">页面执行脚本</label>
+                                <button class="example-btn" onclick="fillCodeScriptExample()">填入示例</button>
+                                <textarea id="codeScript" placeholder="document.body.style.background = 'white';"></textarea>
+                                <div class="help-text">在获取源码前执行的JavaScript代码</div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="codeInitScript">初始化脚本</label>
+                                <button class="example-btn" onclick="fillCodeInitScriptExample()">填入示例</button>
+                                <textarea id="codeInitScript" placeholder="window.pageReady = true;"></textarea>
+                                <div class="help-text">在页面加载前执行的JavaScript代码</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 20px;">
+                        <button class="btn success" onclick="fetchCode()">获取源码</button>
+                        <button class="btn secondary" onclick="clearCodeResult()">清空结果</button>
+                        <button class="btn info" onclick="fillCodeExample()">填入测试示例</button>
+                    </div>
+                    <div id="codeResult" class="result" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:57573';
+
+        // 切换高级参数显示
+        function toggleAdvanced(elementId) {
+            const element = document.getElementById(elementId);
+            element.classList.toggle('show');
+        }
+
+        // 填入示例数据
+        function fillHeadersExample() {
+            document.getElementById('snifferHeaders').value = JSON.stringify({
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                "Referer": "https://example.com",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+            }, null, 2);
+        }
+
+        function fillScriptExample() {
+            document.getElementById('snifferScript').value = `// 点击播放按钮
+const playBtn = document.querySelector('.play-btn, .video-play, [data-play]');
+if (playBtn) playBtn.click();
+
+// 等待视频加载
+await new Promise(resolve => setTimeout(resolve, 3000));`;
+        }
+
+        function fillInitScriptExample() {
+            document.getElementById('snifferInitScript').value = `// 设置全局变量
+window.snifferMode = true;
+window.videoReady = false;
+
+// 监听网络请求
+window.capturedUrls = [];`;
+        }
+
+        function fillCodeHeadersExample() {
+            document.getElementById('codeHeaders').value = JSON.stringify({
+                "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X)",
+                "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8"
+            }, null, 2);
+        }
+
+        function fillCodeScriptExample() {
+            document.getElementById('codeScript').value = `// 移除广告元素
+document.querySelectorAll('.ad, .advertisement').forEach(el => el.remove());
+
+// 等待内容加载
+await new Promise(resolve => setTimeout(resolve, 2000));`;
+        }
+
+        function fillCodeInitScriptExample() {
+            document.getElementById('codeInitScript').value = `// 禁用某些功能
+window.addEventListener = () => {};
+console.log = () => {};`;
+        }
+
+        function fillSnifferExample() {
+            document.getElementById('snifferUrl').value = 'https://www.w3schools.com/html/html5_video.asp';
+            document.getElementById('snifferMode').value = '1';
+            document.getElementById('snifferTimeout').value = '15000';
+            document.getElementById('snifferCustomRegex').value = '\\.mp4|\\.m3u8|\\.webm';
+            document.getElementById('snifferExclude').value = '\\.jpg|\\.png|\\.gif|\\.css|\\.js';
+        }
+
+        function fillCodeExample() {
+            document.getElementById('codeUrl').value = 'https://httpbin.org/html';
+            document.getElementById('codeTimeout').value = '8000';
+            document.getElementById('codeIsPc').value = '1';
+        }
+
+        // 显示加载状态
+        function showLoading(buttonElement) {
+            const loading = document.createElement('span');
+            loading.className = 'loading';
+            buttonElement.insertBefore(loading, buttonElement.firstChild);
+            buttonElement.disabled = true;
+        }
+
+        // 隐藏加载状态
+        function hideLoading(buttonElement) {
+            const loading = buttonElement.querySelector('.loading');
+            if (loading) {
+                loading.remove();
+            }
+            buttonElement.disabled = false;
+        }
+
+        // 显示结果
+        function showResult(elementId, data, isError = false) {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+            
+            // 添加状态指示
+            const statusDiv = document.createElement('div');
+            statusDiv.className = `status ${isError ? 'error' : 'success'}`;
+            statusDiv.textContent = isError ? '❌ 请求失败' : '✅ 请求成功';
+            
+            element.parentNode.insertBefore(statusDiv, element);
+            setTimeout(() => statusDiv.remove(), 5000);
+        }
+
+        // 健康检查
+        async function checkHealth() {
+            const button = event.target;
+            showLoading(button);
+            
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                showResult('statusResult', data);
+            } catch (error) {
+                showResult('statusResult', `错误: ${error.message}`, true);
+            } finally {
+                hideLoading(button);
+            }
+        }
+
+        // 活跃状态检查
+        async function checkActive() {
+            const button = event.target;
+            showLoading(button);
+            
+            try {
+                const response = await fetch(`${API_BASE}/active`);
+                const data = await response.json();
+                showResult('statusResult', data);
+            } catch (error) {
+                showResult('statusResult', `错误: ${error.message}`, true);
+            } finally {
+                hideLoading(button);
+            }
+        }
+
+        // 开始嗅探
+        async function startSniffer() {
+            const button = event.target;
+            const url = document.getElementById('snifferUrl').value;
+            
+            if (!url) {
+                alert('请输入目标 URL');
+                return;
+            }
+
+            showLoading(button);
+            
+            try {
+                const params = new URLSearchParams({
+                    url: url,
+                    mode: document.getElementById('snifferMode').value,
+                    timeout: document.getElementById('snifferTimeout').value,
+                    is_pc: document.getElementById('snifferIsPc').value,
+                    css: document.getElementById('snifferCss').value,
+                    custom_regex: document.getElementById('snifferCustomRegex').value,
+                    sniffer_exclude: document.getElementById('snifferExclude').value
+                });
+
+                // 添加高级参数
+                const headers = document.getElementById('snifferHeaders').value.trim();
+                if (headers) {
+                    try {
+                        JSON.parse(headers); // 验证JSON格式
+                        params.append('headers', headers);
+                    } catch (e) {
+                        alert('请求头格式错误，请输入有效的JSON格式');
+                        return;
+                    }
+                }
+
+                const script = document.getElementById('snifferScript').value.trim();
+                if (script) {
+                    params.append('script', script);
+                }
+
+                const initScript = document.getElementById('snifferInitScript').value.trim();
+                if (initScript) {
+                    params.append('init_script', initScript);
+                }
+
+                const response = await fetch(`${API_BASE}/sniffer?${params}`);
+                const data = await response.json();
+                showResult('snifferResult', data, !response.ok);
+            } catch (error) {
+                showResult('snifferResult', `错误: ${error.message}`, true);
+            } finally {
+                hideLoading(button);
+            }
+        }
+
+        // 获取页面源码
+        async function fetchCode() {
+            const button = event.target;
+            const url = document.getElementById('codeUrl').value;
+            
+            if (!url) {
+                alert('请输入目标 URL');
+                return;
+            }
+
+            showLoading(button);
+            
+            try {
+                const params = new URLSearchParams({
+                    url: url,
+                    timeout: document.getElementById('codeTimeout').value,
+                    is_pc: document.getElementById('codeIsPc').value,
+                    css: document.getElementById('codeCss').value
+                });
+
+                // 添加高级参数
+                const headers = document.getElementById('codeHeaders').value.trim();
+                if (headers) {
+                    try {
+                        JSON.parse(headers); // 验证JSON格式
+                        params.append('headers', headers);
+                    } catch (e) {
+                        alert('请求头格式错误，请输入有效的JSON格式');
+                        return;
+                    }
+                }
+
+                const script = document.getElementById('codeScript').value.trim();
+                if (script) {
+                    params.append('script', script);
+                }
+
+                const initScript = document.getElementById('codeInitScript').value.trim();
+                if (initScript) {
+                    params.append('init_script', initScript);
+                }
+
+                const response = await fetch(`${API_BASE}/fetCodeByWebView?${params}`);
+                const data = await response.json();
+                
+                // 如果是页面源码，只显示前1000个字符
+                if (data.data && data.data.content) {
+                    const content = data.data.content;
+                    data.data.content = content.length > 1000 
+                        ? content.substring(0, 1000) + '\n\n... (内容已截断，总长度: ' + content.length + ' 字符)'
+                        : content;
+                }
+                
+                showResult('codeResult', data, !response.ok);
+            } catch (error) {
+                showResult('codeResult', `错误: ${error.message}`, true);
+            } finally {
+                hideLoading(button);
+            }
+        }
+
+        // 清空结果
+        function clearSnifferResult() {
+            const element = document.getElementById('snifferResult');
+            element.style.display = 'none';
+            element.textContent = '';
+        }
+
+        function clearCodeResult() {
+            const element = document.getElementById('codeResult');
+            element.style.display = 'none';
+            element.textContent = '';
+        }
+
+        // 页面加载完成后自动检查服务状态
+        window.addEventListener('load', () => {
+            setTimeout(checkHealth, 1000);
+        });
+    </script>
+</body>
+</html>
