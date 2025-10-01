@@ -2,9 +2,102 @@ const Fastify = require('fastify');
 const cors = require('@fastify/cors');
 const { readFileSync } = require('fs');
 const { join, dirname } = require('path');
+const { createServer } = require('net');
 const { Sniffer } = require('./sniffer.cjs');
 
 // __filename 和 __dirname 在 CommonJS 中是内置的全局变量
+
+// 解析命令行参数
+function parseCommandLineArgs() {
+    const args = process.argv.slice(2);
+    const options = {
+        port: null,
+        help: false
+    };
+    
+    for (let i = 0; i < args.length; i++) {
+        const arg = args[i];
+        
+        if (arg === '-port' || arg === '--port') {
+            if (i + 1 < args.length) {
+                const portValue = parseInt(args[i + 1]);
+                if (!isNaN(portValue) && portValue > 0 && portValue <= 65535) {
+                    options.port = portValue;
+                    i++; // 跳过端口值参数
+                } else {
+                    console.error('错误：端口号必须是1-65535之间的数字');
+                    process.exit(1);
+                }
+            } else {
+                console.error('错误：-port 参数需要指定端口号');
+                process.exit(1);
+            }
+        } else if (arg === '-h' || arg === '--help') {
+            options.help = true;
+        } else if (arg.startsWith('-')) {
+            console.error(`错误：未知参数 ${arg}`);
+            console.log('使用 -h 或 --help 查看帮助信息');
+            process.exit(1);
+        }
+    }
+    
+    return options;
+}
+
+// 显示帮助信息
+function showHelp() {
+    console.log(`
+Pup Sniffer - 视频资源嗅探器
+
+使用方法:
+  node server.cjs [选项]
+  pup-sniffer-win.exe [选项]
+
+选项:
+  -port <端口号>    指定服务器端口号 (1-65535)
+  -h, --help       显示此帮助信息
+
+示例:
+  node server.cjs -port 8080
+  pup-sniffer-win.exe -port 3000
+
+如果不指定端口号，服务器将从57573开始自动查找可用端口。
+`);
+}
+
+// 检查端口是否可用
+function checkPortAvailable(port) {
+    return new Promise((resolve) => {
+        const server = createServer();
+        
+        server.listen(port, '0.0.0.0', () => {
+            server.once('close', () => {
+                resolve(true);
+            });
+            server.close();
+        });
+        
+        server.on('error', (err) => {
+            resolve(false);
+        });
+    });
+}
+
+// 查找可用端口
+async function findAvailablePort(startPort = 57573) {
+    let port = startPort;
+    const maxAttempts = 100; // 最多尝试100个端口
+    
+    for (let i = 0; i < maxAttempts; i++) {
+        const isAvailable = await checkPortAvailable(port);
+        if (isAvailable) {
+            return port;
+        }
+        port++;
+    }
+    
+    throw new Error(`无法找到可用端口，已尝试从 ${startPort} 到 ${startPort + maxAttempts - 1}`);
+}
 
 // 获取资源文件路径（兼容打包后的环境）
 function getResourcePath(filename) {
@@ -408,14 +501,40 @@ process.on('SIGINT', async () => {
 // 启动服务器
 const start = async () => {
     try {
+        // 解析命令行参数
+        const options = parseCommandLineArgs();
+        
+        // 如果请求帮助，显示帮助信息并退出
+        if (options.help) {
+            showHelp();
+            process.exit(0);
+        }
+        
         // 注册 CORS 插件
         await fastify.register(cors, {
             origin: true,
             credentials: true
         });
         
-        const port = process.env.PORT || 57573;
         const host = process.env.HOST || '0.0.0.0';
+        let port;
+        
+        // 确定使用的端口
+        if (options.port) {
+            // 使用指定的端口
+            const isAvailable = await checkPortAvailable(options.port);
+            if (!isAvailable) {
+                console.error(`错误：指定的端口 ${options.port} 已被占用`);
+                process.exit(1);
+            }
+            port = options.port;
+            console.log(`使用指定端口: ${port}`);
+        } else {
+            // 自动查找可用端口
+            console.log('正在查找可用端口...');
+            port = await findAvailablePort();
+            console.log(`找到可用端口: ${port}`);
+        }
         
         await fastify.listen({ port, host });
         console.log(`🚀 服务器已启动，监听地址: http://${host}:${port}`);
