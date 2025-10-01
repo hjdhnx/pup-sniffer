@@ -12,6 +12,12 @@
 - 🎨 现代化 Web 演示界面
 - 📦 支持打包成二进制文件，无需安装 Node.js
 
+## 系统要求
+
+- **Chrome 浏览器**: 系统需要安装 Chrome 浏览器（Puppeteer 依赖）
+- **Node.js**: 从源码运行需要 Node.js >= 18.0.0
+- **操作系统**: 支持 Windows、Linux、macOS
+
 ## 快速开始
 
 ### 方式一：使用二进制文件（推荐）
@@ -26,12 +32,22 @@
 
 3. 直接运行二进制文件：
    ```bash
-   # Windows
+   # Windows - 默认端口启动
    ./pup-sniffer-win.exe
    
-   # Linux/macOS
+   # Windows - 指定端口启动
+   ./pup-sniffer-win.exe -port 8080
+   
+   # Linux/macOS - 默认端口启动
    ./pup-sniffer-linux
    ./pup-sniffer-macos
+   
+   # Linux/macOS - 指定端口启动
+   ./pup-sniffer-linux -port 8080
+   ./pup-sniffer-macos -port 8080
+   
+   # 查看帮助信息
+   ./pup-sniffer-win.exe --help
    ```
 
 ### 方式二：从源码运行
@@ -43,10 +59,20 @@
 
 2. 启动服务：
    ```bash
+   # 默认端口启动（自动查找可用端口，从57573开始）
    npm start
+   
+   # 或直接使用 node 命令
+   node server.cjs
+   
+   # 指定端口启动
+   node server.cjs -port 8080
+   
+   # 查看帮助信息
+   node server.cjs --help
    ```
 
-服务将在 http://localhost:57573 启动
+服务默认在 http://localhost:57573 启动（如果端口被占用会自动查找下一个可用端口）
 
 ## 构建二进制文件
 
@@ -185,10 +211,16 @@ npm run build:macos-arm
 
 ## 使用示例
 
+**注意**：以下示例使用默认端口 57573，如果您使用了 `-port` 参数指定了其他端口，请相应调整 URL 中的端口号。
+
 ### 基本嗅探
 
 ```bash
+# 默认端口
 curl "http://localhost:57573/sniffer?url=https://example.com/play"
+
+# 自定义端口（如果使用 -port 8080 启动）
+curl "http://localhost:8080/sniffer?url=https://example.com/play"
 ```
 
 ### 多链接嗅探
@@ -220,19 +252,31 @@ curl "http://localhost:57573/fetCodeByWebView?url=https://example.com"
 ## 测试
 
 ```bash
-# 测试 Sniffer 类
+# 运行测试脚本
 npm test
-
-# 测试服务器接口（需要先启动服务）
-npm run test:server
 ```
+
+**注意**: 测试前请确保服务器已启动 (`npm start`)。
+
+## 命令行参数
+
+| 参数 | 说明 | 示例 |
+|------|------|------|
+| `-port <端口号>` | 指定服务器端口号 (1-65535) | `-port 8080` |
+| `-h, --help` | 显示帮助信息 | `--help` |
+
+**端口说明**：
+- 如果不指定端口号，程序将从 57573 开始自动查找可用端口
+- 如果指定的端口被占用，程序会报错并退出
+- 端口号必须在 1-65535 范围内
 
 ## 环境变量
 
 | 变量 | 说明 | 默认值 |
 |------|------|--------|
-| PORT | 服务端口 | 57573 |
-| HOST | 服务主机 | 0.0.0.0 |
+| HOST | 服务主机地址 | 0.0.0.0 |
+
+**注意**: 端口配置请使用 `-port` 命令行参数，不支持通过环境变量设置端口。
 
 ## 注意事项
 
@@ -262,10 +306,10 @@ npm run test:server
 
 ## 开发
 
-项目采用 ESM 模块化开发，主要文件：
+项目采用 CommonJS 模块化开发，主要文件：
 
-- `sniffer.js`: 核心嗅探类
-- `server.js`: Fastify 服务器
+- `sniffer.cjs`: 核心嗅探类
+- `server.cjs`: Fastify 服务器
 - `test.js`: 测试脚本
 - `package.json`: 项目配置
 
