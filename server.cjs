@@ -112,8 +112,11 @@ function getResourcePath(filename) {
 }
 
 // 创建 Fastify 实例
+const isPkg = typeof process.pkg !== 'undefined';
 const fastify = Fastify({
-    logger: {
+    logger: isPkg ? {
+        level: 'info'
+    } : {
         level: 'info',
         transport: {
             target: 'pino-pretty',

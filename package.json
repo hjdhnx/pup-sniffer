@@ -10,10 +10,26 @@
     "test": "node test.js",
     "build": "node build.js",
     "build:all": "npm run build:win && npm run build:linux && npm run build:macos && npm run build:macos-arm",
-    "build:win": "pkg . --targets node18-win-x64 --output dist/pup-sniffer-win.exe",
-    "build:linux": "pkg . --targets node18-linux-x64 --output dist/pup-sniffer-linux",
-    "build:macos": "pkg . --targets node18-macos-x64 --output dist/pup-sniffer-macos",
-    "build:macos-arm": "pkg . --targets node18-macos-arm64 --output dist/pup-sniffer-macos-arm64",
+    "build:win": "pkg . --targets node18-win-x64 --compress GZip --output dist/pup-sniffer-win.exe",
+    "build:linux": "pkg . --targets node18-linux-x64 --compress GZip --output dist/pup-sniffer-linux",
+    "build:macos": "pkg . --targets node18-macos-x64 --compress GZip --output dist/pup-sniffer-macos",
+    "build:macos-arm": "pkg . --targets node18-macos-arm64 --compress GZip --output dist/pup-sniffer-macos-arm64",
+    "build:brotli": "npm run build:win:brotli && npm run build:linux:brotli && npm run build:macos:brotli && npm run build:macos-arm:brotli",
+    "build:win:brotli": "pkg . --targets node18-win-x64 --compress Brotli --output dist/pup-sniffer-win-brotli.exe",
+    "build:linux:brotli": "pkg . --targets node18-linux-x64 --compress Brotli --output dist/pup-sniffer-linux-brotli",
+    "build:macos:brotli": "pkg . --targets node18-macos-x64 --compress Brotli --output dist/pup-sniffer-macos-brotli",
+    "build:macos-arm:brotli": "pkg . --targets node18-macos-arm64 --compress Brotli --output dist/pup-sniffer-macos-arm64-brotli",
+    "build:lite": "npm run build:win:lite && npm run build:linux:lite && npm run build:macos:lite && npm run build:macos-arm:lite",
+    "build:win:lite": "pkg . --targets node18-win-x64 --compress Brotli --no-bytecode --public-packages=* --output dist/pup-sniffer-win-lite.exe",
+    "build:linux:lite": "pkg . --targets node18-linux-x64 --compress Brotli --no-bytecode --public-packages=* --output dist/pup-sniffer-linux-lite",
+    "build:macos:lite": "pkg . --targets node18-macos-x64 --compress Brotli --no-bytecode --public-packages=* --output dist/pup-sniffer-macos-lite",
+    "build:macos-arm:lite": "pkg . --targets node18-macos-arm64 --compress Brotli --no-bytecode --public-packages=* --output dist/pup-sniffer-macos-arm64-lite",
+    "build:optimized": "node build-optimized.js",
+    "build:mini": "npm run build:win:mini && npm run build:linux:mini && npm run build:macos:mini && npm run build:macos-arm:mini",
+    "build:win:mini": "pkg . --targets node18-win-x64 --compress Brotli --no-bytecode --public-packages=* --no-warnings --output dist/pup-sniffer-win-mini.exe",
+    "build:linux:mini": "pkg . --targets node18-linux-x64 --compress Brotli --no-bytecode --public-packages=* --no-warnings --output dist/pup-sniffer-linux-mini",
+    "build:macos:mini": "pkg . --targets node18-macos-x64 --compress Brotli --no-bytecode --public-packages=* --no-warnings --output dist/pup-sniffer-macos-mini",
+    "build:macos-arm:mini": "pkg . --targets node18-macos-arm64 --compress Brotli --no-bytecode --public-packages=* --no-warnings --output dist/pup-sniffer-macos-arm64-mini",
     "clean": "rimraf dist",
     "prebuild": "npm run clean"
   },
@@ -49,9 +65,7 @@
     ],
     "assets": [
       "demo.html",
-      "node_modules/puppeteer/.local-chromium/**/*",
-      "node_modules/thread-stream/lib/worker.js",
-      "node_modules/pino-pretty/**/*"
+      "node_modules/thread-stream/lib/worker.js"
     ],
     "targets": [
       "node18-win-x64",
@@ -59,6 +73,17 @@
       "node18-macos-x64",
       "node18-macos-arm64"
     ],
-    "outputPath": "dist"
+    "outputPath": "dist",
+    "options": [
+      "--no-bytecode",
+      "--public-packages=*",
+      "--no-warnings"
+    ],
+    "patches": {
+      "puppeteer": [
+        "node_modules/puppeteer/lib/cjs/puppeteer/node/BrowserFetcher.js"
+      ]
+    },
+    "compress": "Brotli"
   }
 }

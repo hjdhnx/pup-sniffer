@@ -1,0 +1,77 @@
+# 开发和测试文件
+test.js
+quick-test.js
+build.js
+start.js
+test-video.html
+
+# 文档文件
+README.md
+LICENSE
+API_DOCS.md
+
+# Git 相关
+.gitignore
+.git/
+
+# Node.js 相关
+node_modules/.cache/
+node_modules/*/test/
+node_modules/*/tests/
+node_modules/*/.nyc_output/
+node_modules/*/coverage/
+node_modules/*/docs/
+node_modules/*/doc/
+node_modules/*/examples/
+node_modules/*/example/
+node_modules/*/benchmark/
+node_modules/*/benchmarks/
+
+# Puppeteer 相关 - 排除大部分 Chromium 文件
+node_modules/puppeteer/.local-chromium/
+node_modules/puppeteer/lib/esm/
+node_modules/puppeteer/src/
+node_modules/puppeteer/test/
+node_modules/puppeteer/docs/
+
+# 开发环境专用模块
+node_modules/pino-pretty/
+
+# TypeScript 定义文件
+node_modules/@types/
+*.d.ts
+
+# 日志文件
+*.log
+logs/
+
+# 临时文件
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# 开发工具配置
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 构建输出
+dist/
+build/
+
+# 包管理器文件
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# 其他大型依赖的非必要部分
+node_modules/*/CHANGELOG.md
+node_modules/*/HISTORY.md
+node_modules/*/AUTHORS
+node_modules/*/CONTRIBUTORS
+node_modules/*/*.md
+node_modules/*/*.txt
+node_modules/*/LICENSE*
+node_modules/*/LICENCE*
