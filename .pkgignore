@@ -8,7 +8,7 @@ test-video.html
 # 文档文件
 README.md
 LICENSE
-API_DOCS.md
+docs/
 
 # Git 相关
 .gitignore

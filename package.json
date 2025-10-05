@@ -1,6 +1,6 @@
 {
   "name": "pup-sniffer",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Video resource sniffer using Puppeteer and Fastify",
   "main": "server.cjs",
   "bin": "server.cjs",
