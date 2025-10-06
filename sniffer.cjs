@@ -43,6 +43,33 @@ class Sniffer {
     }
 
     /**
+     * 安全的 page.evaluate 调用，处理执行上下文销毁的情况
+     */
+    async safeEvaluate(page, pageFunction, ...args) {
+        try {
+            // 检查页面是否已关闭
+            if (page.isClosed()) {
+                this.log('页面已关闭，跳过 evaluate 调用');
+                return null;
+            }
+            
+            return await page.evaluate(pageFunction, ...args);
+        } catch (error) {
+            // 处理执行上下文销毁错误
+            if (error.message.includes('Execution context was destroyed') ||
+                error.message.includes('Cannot find context') ||
+                error.message.includes('Target closed')) {
+                this.log('执行上下文已销毁，安全跳过 evaluate 调用:', error.message);
+                return null;
+            }
+            
+            // 其他错误继续抛出
+            this.log('evaluate 调用发生错误:', error.message);
+            throw error;
+        }
+    }
+
+    /**
      * 检查是否可以进行 HEAD 请求
      */
     canHeadCheck(url) {
@@ -363,7 +390,7 @@ class Sniffer {
         // 执行页面脚本
         if (script) {
             try {
-                await page.evaluate(script);
+                await this.safeEvaluate(page, script);
                 this.log(`网页加载完成后成功执行脚本: ${script}`);
             } catch (e) {
                 this.log(`网页加载完成后执行脚本发生错误: ${e.message}`);
@@ -403,6 +430,11 @@ class Sniffer {
         const headUrls = []; // 已经 head 请求过的链接
         const page = await this.getPage(headers);
 
+        // 外部变量保存嗅探结果，避免依赖页面上下文
+        let externalRealUrl = '';
+        let externalRealHeaders = {};
+        let sniffingSuccess = false;
+
         let actualTimeout = timeout || this.timeout;
         if (mode === 1) {
             actualTimeout = Math.min(actualTimeout, this.timeout);
@@ -412,12 +444,19 @@ class Sniffer {
 
         // 请求拦截器
         const onRequest = async (request) => {
-            const url = request.url();
-            const method = request.method();
-            const requestHeaders = request.headers();
-            const resourceType = request.resourceType();
-            
-            this.log('on_request:', url, ' method:', method, ' resource_type:', resourceType);
+            try {
+                // 检查页面是否已关闭
+                if (page.isClosed()) {
+                    this.log('页面已关闭，跳过请求处理');
+                    return false;
+                }
+
+                const url = request.url();
+                const method = request.method();
+                const requestHeaders = request.headers();
+                const resourceType = request.resourceType();
+                
+                this.log('on_request:', url, ' method:', method, ' resource_type:', resourceType);
 
             // 检查排除正则
             if (snifferExclude && new RegExp(snifferExclude, 'mi').test(url)) {
@@ -432,7 +471,13 @@ class Sniffer {
 
                 realUrls.push({ url, headers: _headers });
                 
-                await page.evaluate(([url, _headers, realUrls]) => {
+                // 保存到外部变量
+                externalRealUrl = url;
+                externalRealHeaders = _headers;
+                sniffingSuccess = true;
+                
+                // 尝试设置页面变量（可能失败但不影响结果）
+                await this.safeEvaluate(page, ([url, _headers, realUrls]) => {
                     window.realUrl = url;
                     window.realHeaders = _headers;
                     window.realUrls = realUrls;
@@ -457,7 +502,13 @@ class Sniffer {
 
                     realUrls.push({ url, headers: _headers });
                     
-                    await page.evaluate(([url, _headers, realUrls]) => {
+                    // 保存到外部变量
+                    externalRealUrl = url;
+                    externalRealHeaders = _headers;
+                    sniffingSuccess = true;
+                    
+                    // 尝试设置页面变量（可能失败但不影响结果）
+                    await this.safeEvaluate(page, ([url, _headers, realUrls]) => {
                         window.realUrl = url;
                         window.realHeaders = _headers;
                         window.realUrls = realUrls;
@@ -501,7 +552,13 @@ class Sniffer {
 
                                 realUrls.push({ url, headers: _headers });
                                 
-                                await page.evaluate(([url, _headers, realUrls]) => {
+                                // 保存到外部变量
+                                externalRealUrl = url;
+                                externalRealHeaders = _headers;
+                                sniffingSuccess = true;
+                                
+                                // 尝试设置页面变量（可能失败但不影响结果）
+                                await this.safeEvaluate(page, ([url, _headers, realUrls]) => {
                                     window.realUrl = url;
                                     window.realHeaders = _headers;
                                     window.realUrls = realUrls;
@@ -526,6 +583,19 @@ class Sniffer {
             }
             
             return false;
+            } catch (error) {
+                // 全局错误处理
+                if (error.message.includes('Execution context was destroyed') ||
+                    error.message.includes('Cannot find context') ||
+                    error.message.includes('Target closed') ||
+                    error.message.includes('Page closed')) {
+                    this.log('请求处理过程中页面上下文已销毁，安全跳过:', error.message);
+                    return false;
+                }
+                
+                this.log('请求处理过程中发生错误:', error.message);
+                return false;
+            }
         };
 
         // 监听请求
@@ -539,7 +609,7 @@ class Sniffer {
         await page.exposeFunction('log', (...args) => console.log(...args));
 
         // 初始化页面变量
-        await page.evaluate(() => {
+        await this.safeEvaluate(page, () => {
             window.realUrl = '';
             window.realHeaders = {};
             window.realUrls = [];
@@ -598,7 +668,7 @@ class Sniffer {
                 `;
                 
                 await page.evaluateOnNewDocument(jsCode);
-                await page.evaluate(jsCode);
+                await this.safeEvaluate(page, jsCode);
                 this.log(`网页加载完成后成功执行脚本: ${script}`);
             } catch (e) {
                 this.log(`网页加载完成后执行脚本发生错误: ${e.message}`);
@@ -610,10 +680,18 @@ class Sniffer {
         // 等待结果
         if (mode === 0) {
             try {
-                await page.waitForFunction(() => window.realUrl, { timeout: actualTimeout });
+                // 优先检查外部变量，如果已经有结果就不需要等待
+                if (!sniffingSuccess) {
+                    await page.waitForFunction(() => window.realUrl, { timeout: actualTimeout });
+                } else {
+                    this.log('外部变量已有嗅探结果，跳过等待');
+                }
             } catch (e) {
                 this.log(`page.waitForFunction window.realUrl 发生了错误: ${e.message}`);
-                isTimeout = true;
+                // 即使等待失败，也检查外部变量是否有结果
+                if (!sniffingSuccess) {
+                    isTimeout = true;
+                }
             }
         } else if (mode === 1) {
             try {
@@ -624,10 +702,17 @@ class Sniffer {
             }
         }
 
-        // 获取结果
-        const realUrl = await page.evaluate(() => window.realUrl);
-        const realHeaders = await page.evaluate(() => window.realHeaders);
-        const realUrlsResult = await page.evaluate(() => window.realUrls);
+        // 获取结果 - 优先使用外部变量
+        let realUrl = externalRealUrl || '';
+        let realHeaders = externalRealHeaders || {};
+        let realUrlsResult = realUrls || [];
+        
+        // 如果外部变量没有结果，再尝试从页面获取
+        if (!realUrl) {
+            realUrl = await this.safeEvaluate(page, () => window.realUrl) || '';
+            realHeaders = await this.safeEvaluate(page, () => window.realHeaders) || {};
+            realUrlsResult = await this.safeEvaluate(page, () => window.realUrls) || [];
+        }
 
         const cost = Date.now() - startTime;
         const costStr = `${cost} ms`;
