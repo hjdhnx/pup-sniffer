@@ -452,7 +452,8 @@
     </div>
 
     <script>
-        const API_BASE = 'http://localhost:57573';
+        // 动态获取当前页面的协议、主机和端口作为API基础地址
+        const API_BASE = `${window.location.protocol}//${window.location.host}`;
 
         // 切换高级参数显示
         function toggleAdvanced(elementId) {
